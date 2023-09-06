@@ -14,6 +14,8 @@ import articleFlagsRoute from './routes/article/flags.routes'
 import articleLikesRoute from './routes/article/likes.routes'
 import wellbeingRoutes from './routes/wellbeing.routes'
 import smartJournalRoutes from './routes/smartJournal.routes'
+import meetingRoutes from './routes/meeting.routes'
+import subscriptionRoutes from './routes/subscription.routes'
 
 import swaggerUi from "swagger-ui-express";
 import { RegisterRoutes } from "./swaggerRouter/routes";
@@ -69,6 +71,8 @@ app.use('/article', [
 ])
 app.use('/wellbeing', wellbeingRoutes)
 app.use('/smartJournal', smartJournalRoutes)
+app.use('/', meetingRoutes)
+app.use('/', subscriptionRoutes)
 
 RegisterRoutes(app);
 

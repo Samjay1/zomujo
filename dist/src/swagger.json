@@ -245,7 +245,7 @@
 						}
 					}
 				},
-				"description": "\nCreates and saves journal prompts to the database",
+				"description": "\r\nCreates and saves journal prompts to the database",
 				"tags": [
 					"SmartJournalController"
 				],
@@ -305,7 +305,7 @@
 						}
 					}
 				},
-				"description": "\nRetrieves a specific journal prompt with its appropriate id",
+				"description": "\r\nRetrieves a specific journal prompt with its appropriate id",
 				"tags": [
 					"SmartJournalController"
 				],
@@ -421,7 +421,7 @@
 						}
 					}
 				},
-				"description": "\nCreates and saves journal entries to the database",
+				"description": "\r\nCreates and saves journal entries to the database",
 				"tags": [
 					"SmartJournalController"
 				],
@@ -471,7 +471,7 @@
 						}
 					}
 				},
-				"description": "\nRetrieves journal entries of a specific user",
+				"description": "\r\nRetrieves journal entries of a specific user",
 				"tags": [
 					"SmartJournalController"
 				],
@@ -530,7 +530,7 @@
 						}
 					}
 				},
-				"description": "\nRetrieves a specific journal entry for a user",
+				"description": "\r\nRetrieves a specific journal entry for a user",
 				"tags": [
 					"SmartJournalController"
 				],
@@ -598,7 +598,7 @@
 						}
 					}
 				},
-				"description": "\nDeletes a specific journal entry of a user",
+				"description": "\r\nDeletes a specific journal entry of a user",
 				"tags": [
 					"SmartJournalController"
 				],

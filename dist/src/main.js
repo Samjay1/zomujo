@@ -19,6 +19,8 @@ const flags_routes_1 = __importDefault(require("./routes/article/flags.routes"))
 const likes_routes_1 = __importDefault(require("./routes/article/likes.routes"));
 const wellbeing_routes_1 = __importDefault(require("./routes/wellbeing.routes"));
 const smartJournal_routes_1 = __importDefault(require("./routes/smartJournal.routes"));
+const meeting_routes_1 = __importDefault(require("./routes/meeting.routes"));
+const subscription_routes_1 = __importDefault(require("./routes/subscription.routes"));
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const routes_1 = require("./swaggerRouter/routes");
 require('dotenv').config();
@@ -62,6 +64,8 @@ app.use('/article', [
 ]);
 app.use('/wellbeing', wellbeing_routes_1.default);
 app.use('/smartJournal', smartJournal_routes_1.default);
+app.use('/', meeting_routes_1.default);
+app.use('/', subscription_routes_1.default);
 (0, routes_1.RegisterRoutes)(app);
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

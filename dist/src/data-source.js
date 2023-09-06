@@ -9,7 +9,8 @@ const path_1 = __importDefault(require("path"));
 const config_1 = __importDefault(require("./utils/config"));
 require("dotenv").config();
 exports.dataSource = new typeorm_1.DataSource({
-    type: 'mssql',
+    // type: 'mssql',
+    type: 'mysql',
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
     username: process.env.DB_USERNAME,
@@ -19,8 +20,10 @@ exports.dataSource = new typeorm_1.DataSource({
     logging: true,
     synchronize: config_1.default.synchronize,
     extra: {
-        trustedConnection: true,
-        trustServerCertificate: true,
+        // trustedConnection: true,
+        // trustServerCertificate: true,
+        charset: 'utf8mb4',
+        collation: 'utf8mb4_unicode_ci',
     }
 });
 //# sourceMappingURL=data-source.js.map

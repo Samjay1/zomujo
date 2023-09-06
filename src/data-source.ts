@@ -5,7 +5,8 @@ import config from "./utils/config";
 require("dotenv").config();
 
 export const dataSource = new DataSource({
-    type: 'mssql',
+    // type: 'mssql',
+    type: 'mysql',
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
     username: process.env.DB_USERNAME,
@@ -15,7 +16,9 @@ export const dataSource = new DataSource({
     logging: true,
     synchronize: config.synchronize,
     extra: {
-        trustedConnection: true,
-        trustServerCertificate: true,
+        // trustedConnection: true,
+        // trustServerCertificate: true,
+        charset: 'utf8mb4',
+        collation: 'utf8mb4_unicode_ci',
     }
 })
