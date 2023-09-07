@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/awinxcxu/zomujo.awinteck.com
+    - /bin/cp -a * $DEPLOYPATH

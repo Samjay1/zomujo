@@ -12,6 +12,12 @@ export class Transaction {
   amount!: number;
 
   @Column()
+  currency!: string;
+
+  @Column()
+  channel!: string;
+
+  @Column()
   status!: string;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

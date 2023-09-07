@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import crypto from "crypto";
 import { Request, Response } from "express";
 import * as https from "https";
 import * as http from "http";
@@ -51,156 +52,6 @@ export const createPlan = async (req: Request, res: Response) => {
 };
 
 // Initiate payment for a subscription plan
-// export const initiatePayment = async (req: Request, res: Response) => {
-//   const { email, plan, amount } = req.body;
-
-//   const requestData = {
-//     email,
-//     amount,
-//     plan,
-//   };
-
-//   const params = JSON.stringify(requestData);
-
-//   const options: https.RequestOptions = {
-//     hostname: 'api.paystack.co',
-//     port: 443,
-//     path: '/transaction/initialize',
-//     method: 'POST',
-//     headers: {
-//       Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-//       'Content-Type': 'application/json',
-//     },
-//   };
-
-//   const paystackRequest = https.request(options, (paystackRes: http.IncomingMessage) => {
-//     let data = '';
-
-//     paystackRes.on('data', (chunk: string) => {
-//       data += chunk;
-//     });
-
-//     paystackRes.on('end', async () => {
-//       const responseData = JSON.parse(data);
-
-//       console.log(responseData.data.reference);
-
-//       await verifyAndStorePayment(responseData.data.reference)
-
-//       res.json(responseData);
-//     });
-//   }).on('error', (error: Error) => {
-//     console.error(error);
-//     res.status(500).json({ error: 'An error occurred' });
-//   });
-
-//   paystackRequest.write(params);
-//   paystackRequest.end();
-// };
-
-
-// Verify payment and add to database
-// export const verifyAndStorePayment = async (paymentReference: string) => {
-
-//   const verifyOptions: https.RequestOptions = {
-//     hostname: 'api.paystack.co',
-//     port: 443,
-//     path: `/transaction/verify/${paymentReference}`, 
-//     method: 'GET',
-//     headers: {
-//       Authorization: `Bearer ${process.env.SECRET}`,
-//     },
-//   };
-
-//   const verifyRequest = https.request(verifyOptions, async (verifyRes: http.IncomingMessage) => {
-//     let data = '';
-
-//     verifyRes.on('data', (chunk: string) => {
-//       data += chunk;
-//     });
-
-//     verifyRes.on('end', async () => {
-//       const verificationData = JSON.parse(data);
-//       console.log(verificationData);
-
-//       if (verificationData.status === true && verificationData.data.status === 'success') {
-        
-//         try {
-//           const transactionRepository = dataSource.getRepository(Transaction);
-        
-//           const newTransaction = transactionRepository.create({
-//             reference: verificationData.data.reference,
-//             amount: verificationData.data.amount,
-//             status: verificationData.data.status
-//           });
-        
-//           await transactionRepository.save(newTransaction);
-//         } catch (error) {
-//           console.error('Error saving transaction:', error);
-//         }
-//       }
-//     });
-//   }).on('error', (error: Error) => {
-//     console.error(error);
-//   });
-
-//     verifyRequest.end();
-// };
-
-// Verify payment and add to database
-const verifyAndStorePayment = (paymentReference: string): Promise<void> => {
-  return new Promise<void>((resolve, reject) => {
-    const verifyOptions: https.RequestOptions = {
-      hostname: 'api.paystack.co',
-      port: 443,
-      path: `/transaction/verify/${paymentReference}`,
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${process.env.SECRET}`,
-      },
-    };
-
-    const verifyRequest = https.request(verifyOptions, (verifyRes: http.IncomingMessage) => {
-      let data = '';
-
-      verifyRes.on('data', (chunk: string) => {
-        data += chunk;
-      });
-
-      verifyRes.on('end', async () => {
-        const verificationData = JSON.parse(data);
-        console.log(verificationData);
-
-        if (verificationData.status === true && verificationData.data.status === 'success') {
-          try {
-            const transactionRepository = dataSource.getRepository(Transaction);
-
-            const newTransaction = transactionRepository.create({
-              reference: verificationData.data.reference,
-              amount: verificationData.data.amount,
-              status: verificationData.data.status,
-            });
-
-            await transactionRepository.save(newTransaction);
-            resolve(); // Resolve the promise when the transaction is successfully stored
-          } catch (error) {
-            console.error('Error saving transaction:', error);
-            reject(error); // Reject the promise if there's an error
-          }
-        } else {
-          reject('Payment verification failed or payment was not successful');
-        }
-      });
-    }).on('error', (error: Error) => {
-      console.error(error);
-      reject(error); // Reject the promise if there's an error during the HTTP request
-    });
-
-    verifyRequest.end();
-  });
-};
-
-// Initiate payment for a subscription plan
 export const initiatePayment = async (req: Request, res: Response) => {
   const { email, plan, amount } = req.body;
 
@@ -218,44 +69,103 @@ export const initiatePayment = async (req: Request, res: Response) => {
     path: '/transaction/initialize',
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.SECRET}`,
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
       'Content-Type': 'application/json',
     },
   };
 
-  try {
-    const responseData = await makeHttpRequest(options, params);
-    console.log(responseData.data.reference);
+  const paystackRequest = https.request(options, (paystackRes: http.IncomingMessage) => {
+    let data = '';
 
-    // Verify and store payment after successful payment initialization
-    // await verifyAndStorePayment(responseData.data.reference);
+    paystackRes.on('data', (chunk: string) => {
+      data += chunk;
+    });
 
-    res.json(responseData);
-  } catch (error) {
+    paystackRes.on('end', async () => {
+      const responseData = JSON.parse(data);
+
+      res.json(responseData);
+    });
+  }).on('error', (error: Error) => {
     console.error(error);
     res.status(500).json({ error: 'An error occurred' });
-  }
+  });
+
+  paystackRequest.write(params);
+  paystackRequest.end();
 };
 
-const makeHttpRequest = (options: https.RequestOptions, body: string): Promise<any> => {
+
+// Paystack Webhook
+export const paystackWebhook = async (req: Request, res: Response) => {
+
+  const hash = crypto.createHmac('sha512', process.env.WEBHOOK_SECRET as string)
+    .update(JSON.stringify(req.body))
+    .digest('hex');
+
+  if (hash === req.headers['x-paystack-signature']) {
+    console.log(true);
+    const eventData = req.body;
+
+    if (eventData.event === 'charge.success') {
+        try {
+          const transactionRepository = dataSource.getRepository(Transaction);
+
+          const verifyResponse = await verifyPayment(eventData.data.reference);
+    
+          if (verifyResponse && verifyResponse.data.status === 'success') {
+            const transaction = new Transaction();
+            transaction.reference = verifyResponse.data.reference;
+            transaction.amount = verifyResponse.data.amount;
+            transaction.currency = verifyResponse.data.currency;
+            transaction.channel = verifyResponse.data.channel;
+            transaction.status = verifyResponse.data.status;
+    
+            await transactionRepository.save(transaction);
+    
+            console.log('Payment successfully verified and stored:', eventData.data.reference);
+          } else {
+            console.error('Payment verification failed');
+          }
+        } catch (error) {
+          console.error('Error storing or verifying payment:', error);
+        }
+      }
+    }
+    res.sendStatus(200);
+}
+
+// Verify payment
+export const verifyPayment = (reference: string): Promise<any> => {
   return new Promise((resolve, reject) => {
-    const request = https.request(options, (response: http.IncomingMessage) => {
+    const options = {
+      hostname: 'api.paystack.co',
+      port: 443,
+      path: `/transaction/verify/${reference}`,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`
+      }
+    }
+
+    const req = https.request(options, res => {
       let data = '';
 
-      response.on('data', (chunk: string) => {
+      res.on('data', chunk => {
         data += chunk;
       });
 
-      response.on('end', () => {
-        resolve(JSON.parse(data));
+      res.on('end', () => {
+        const response = JSON.parse(data);
+        resolve(response);
       });
     });
 
-    request.on('error', (error: Error) => {
+    req.on('error', error => {
+      console.error(error);
       reject(error);
     });
 
-    request.write(body);
-    request.end();
+    req.end();
   });
-};
+}
