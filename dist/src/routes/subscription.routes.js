@@ -8,6 +8,7 @@ const subscription_controller_1 = require("../controllers/subscription.controlle
 const router = express_1.default.Router();
 router.post("/create-plan", subscription_controller_1.createPlan);
 router.post("/initiate-payment", subscription_controller_1.initiatePayment);
-router.post("/paystack-webhook", subscription_controller_1.paystackWebhook);
+// router.post("/paystack-webhook", paystackWebhook);
+router.post('/populateDummyData', subscription_controller_1.populateDummyData);
 exports.default = router;
 //# sourceMappingURL=subscription.routes.js.map

@@ -26,14 +26,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyPayment = exports.paystackWebhook = exports.initiatePayment = exports.createPlan = void 0;
+exports.populateDummyData = exports.verifyPayment = exports.initiatePayment = exports.createPlan = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
-const crypto_1 = __importDefault(require("crypto"));
 const https = __importStar(require("https"));
 const transactions_1 = require("../models/transactions");
 const data_source_1 = require("../data-source");
 dotenv_1.default.config();
 const PAYSTACK_SECRET_KEY = process.env.SECRET;
+let verificationInterval = null;
 // Create a new subscription plan
 const createPlan = async (req, res) => {
     const { name, amount, interval } = req.body;
@@ -95,6 +95,7 @@ const initiatePayment = async (req, res) => {
         });
         paystackRes.on('end', async () => {
             const responseData = JSON.parse(data);
+            await (0, exports.verifyPayment)(responseData.data.reference);
             res.json(responseData);
         });
     }).on('error', (error) => {
@@ -105,68 +106,64 @@ const initiatePayment = async (req, res) => {
     paystackRequest.end();
 };
 exports.initiatePayment = initiatePayment;
-// Paystack Webhook
-const paystackWebhook = async (req, res) => {
-    const hash = crypto_1.default.createHmac('sha512', process.env.WEBHOOK_SECRET)
-        .update(JSON.stringify(req.body))
-        .digest('hex');
-    if (hash === req.headers['x-paystack-signature']) {
-        console.log(true);
-        const eventData = req.body;
-        if (eventData.event === 'charge.success') {
-            try {
-                const transactionRepository = data_source_1.dataSource.getRepository(transactions_1.Transaction);
-                const verifyResponse = await (0, exports.verifyPayment)(eventData.data.reference);
-                if (verifyResponse && verifyResponse.data.status === 'success') {
-                    const transaction = new transactions_1.Transaction();
-                    transaction.reference = verifyResponse.data.reference;
-                    transaction.amount = verifyResponse.data.amount;
-                    transaction.currency = verifyResponse.data.currency;
-                    transaction.channel = verifyResponse.data.channel;
-                    transaction.status = verifyResponse.data.status;
-                    await transactionRepository.save(transaction);
-                    console.log('Payment successfully verified and stored:', eventData.data.reference);
-                }
-                else {
-                    console.error('Payment verification failed');
-                }
-            }
-            catch (error) {
-                console.error('Error storing or verifying payment:', error);
-            }
-        }
-    }
-    res.sendStatus(200);
-};
-exports.paystackWebhook = paystackWebhook;
 // Verify payment
-const verifyPayment = (reference) => {
-    return new Promise((resolve, reject) => {
-        const options = {
-            hostname: 'api.paystack.co',
-            port: 443,
-            path: `/transaction/verify/${reference}`,
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`
+const verifyPayment = async (reference) => {
+    const options = {
+        hostname: 'api.paystack.co',
+        port: 443,
+        path: `/transaction/verify/${reference}`,
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`
+        }
+    };
+    const req = https.request(options, res => {
+        let data = '';
+        res.on('data', chunk => {
+            data += chunk;
+        });
+        res.on('end', async () => {
+            const response = JSON.parse(data);
+            if (response.data.status === 'success') {
+                console.log('Payment Verified');
+                const transactionRepository = data_source_1.dataSource.getRepository(transactions_1.Transaction);
+                const newTransaction = transactionRepository.create({
+                    reference: response.data.reference,
+                    amount: response.data.amount,
+                    currency: response.data.currency,
+                    channel: response.data.channel,
+                    status: response.data.status,
+                });
+                return await transactionRepository.save(newTransaction);
             }
-        };
-        const req = https.request(options, res => {
-            let data = '';
-            res.on('data', chunk => {
-                data += chunk;
-            });
-            res.on('end', () => {
-                const response = JSON.parse(data);
-                resolve(response);
-            });
+            else {
+                setTimeout(() => (0, exports.verifyPayment)(reference), 10000);
+            }
         });
-        req.on('error', error => {
-            console.error(error);
-            reject(error);
-        });
-        req.end();
     });
+    req.on('error', error => {
+        console.error(error);
+    });
+    req.end();
 };
 exports.verifyPayment = verifyPayment;
+const populateDummyData = async (req, res) => {
+    try {
+        const transactionRepository = data_source_1.dataSource.getRepository(transactions_1.Transaction);
+        const dummyData = [
+            { reference: 'REF001', amount: 100.50, currency: 'USD', channel: 'Online', status: 'Pending' },
+            { reference: 'REF002', amount: 200.75, currency: 'EUR', channel: 'In-Person', status: 'Completed' },
+        ];
+        for (const data of dummyData) {
+            const transaction = transactionRepository.create(data);
+            await transactionRepository.save(transaction);
+        }
+        res.send('Dummy data populated successfully!');
+    }
+    catch (error) {
+        res.status(500).send('Internal Server Error');
+        console.error(error);
+    }
+};
+exports.populateDummyData = populateDummyData;
 //# sourceMappingURL=subscription.controller.js.map
